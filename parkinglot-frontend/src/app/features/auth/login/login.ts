@@ -50,7 +50,7 @@ export class Login {
         this.message = 'Login exitoso';
 
         // 🚗 redirección correcta
-        this.router.navigate(['/vehicles/create-vehicle']);
+        this.router.navigate(['/vehicles/list']);
 
         this.loading = false;
       },

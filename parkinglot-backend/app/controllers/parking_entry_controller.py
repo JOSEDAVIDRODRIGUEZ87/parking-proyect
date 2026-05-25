@@ -68,55 +68,40 @@ def get_parking_entry_by_id(
 
 # REGISTRAR INGRESO VEHICULO
 @router.post("/check-in")
-def check_in(
-    request: ParkingEntryRequest,
-    db: Session = Depends(get_db)
-):
+def check_in(request: ParkingEntryRequest, db: Session = Depends(get_db)):
 
     vehicle = db.query(Vehicle).filter(
         Vehicle.id == request.vehicle_id
     ).first()
 
     if not vehicle:
+        raise HTTPException(status_code=404, detail="Vehiculo no encontrado")
 
-        raise HTTPException(
-            status_code=404,
-            detail="Vehiculo no encontrado"
-        )
-
-    # VALIDAR SI YA TIENE INGRESO ACTIVO
     active_entry = db.query(ParkingEntry).filter(
         ParkingEntry.vehicle_id == request.vehicle_id,
         ParkingEntry.exit_time == None
     ).first()
 
     if active_entry:
-
         raise HTTPException(
-    status_code=409,
-    detail={
-        "message": "El vehiculo ya se encuentra dentro del parqueadero",
-        "plate": vehicle.plate,
-        "entry_time": active_entry.entry_time
-    }
-)
+            status_code=409,
+            detail="El vehiculo ya se encuentra dentro del parqueadero"
+        )
 
     new_entry = ParkingEntry(
         id=str(uuid.uuid4()),
-        vehicle_id=request.vehicle_id
+        vehicle_id=request.vehicle_id,
+        notes=request.notes  # ✅ AQUÍ YA FUNCIONA
     )
 
     db.add(new_entry)
-
     db.commit()
-
     db.refresh(new_entry)
 
     return {
         "message": "Ingreso registrado correctamente",
         "data": new_entry
     }
-
 
 # REGISTRAR SALIDA VEHICULO
 @router.put("/check-out/{parking_entry_id}")

@@ -9,9 +9,8 @@ from decimal import Decimal
 
 # REQUEST CHECK-IN
 class ParkingEntryRequest(BaseModel):
-
     vehicle_id: str
-
+    notes: Optional[str] = None
 
 # RESPONSE
 class ParkingEntryResponse(BaseModel):

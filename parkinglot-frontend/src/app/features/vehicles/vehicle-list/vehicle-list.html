@@ -1,1 +1,47 @@
-<p>vehicle-list works!</p>
+<div class="container">
+
+  <div class="header">
+    <h2>🚗 Mis Vehículos</h2>
+    <button (click)="refresh()" [disabled]="loading">
+      🔄 Recargar
+    </button>
+  </div>
+
+  @if (user) {
+  <div class="user-info">
+    <p><strong>Email:</strong> {{ user.email }}</p>
+  </div>
+  }
+
+  @if (loading) {
+  <p>Cargando vehículos...</p>
+  }
+
+  @if (errorMessage) {
+  <p class="error">
+    {{ errorMessage }}
+  </p>
+  }
+
+  <div class="grid">
+    @for (v of vehicles; track v.plate) {
+    <div class="card">
+      <h3>{{ v.plate }}</h3>
+
+      <p><strong>Marca:</strong> {{ v.brand }}</p>
+      <p><strong>Modelo:</strong> {{ v.model }}</p>
+      <p><strong>Color:</strong> {{ v.color }}</p>
+      <p><strong>Tipo:</strong> {{ v.vehicle_type }}</p>
+
+      <button class="btn-checkin" (click)="goToCheckIn(v)">
+        🚗 Check-in
+      </button>
+    </div>
+    } @empty {
+    @if (!loading) {
+    <p>No tienes vehículos registrados</p>
+    }
+    }
+  </div>
+
+</div>

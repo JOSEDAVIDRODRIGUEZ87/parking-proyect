@@ -165,3 +165,15 @@ def delete_vehicle(
     return {
         "message": "Vehiculo eliminado correctamente"
     }
+    
+@router.get("/user/{user_id}")
+def get_vehicles_by_user(
+    user_id: str,
+    db: Session = Depends(get_db)
+):
+
+    vehicles = db.query(Vehicle).filter(
+        Vehicle.user_id == user_id
+    ).all()
+
+    return vehicles

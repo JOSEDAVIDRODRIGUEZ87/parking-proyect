@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../../../core/services/auth.service';
+import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-parking-entry',
@@ -14,9 +15,9 @@ import { AuthService } from '../../../../core/services/auth.service';
 export class ParkingEntry {
 
   form: FormGroup;
-  now = new Date();
-
   user: any = null;
+
+  vehicleId: string | null = null;
 
   loading = false;
   successMessage = '';
@@ -25,66 +26,80 @@ export class ParkingEntry {
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private http: HttpClient
+    private http: HttpClient,
+    private route: ActivatedRoute
   ) {
 
-    // 🔐 usuario seguro desde localStorage
-    this.user = this.authService.getUser() || {};
-
-    console.log('USER COMPLETO:', this.user);
+    this.user = this.authService.getUser();
 
     this.form = this.fb.group({
-      plate: ['', [Validators.required, Validators.minLength(5)]],
-      vehicleType: ['', Validators.required],
+      plate: ['', Validators.required],
+      vehicle_type: ['', Validators.required],
       notes: ['']
     });
+
+    // 📥 recibir vehicle_id desde navegación
+    this.route.queryParams.subscribe(params => {
+
+      this.vehicleId = params['vehicle_id'];
+
+      console.log('VEHICLE ID:', this.vehicleId);
+
+      if (this.vehicleId) {
+        this.loadVehicle(this.vehicleId);
+      }
+    });
+  }
+
+  loadVehicle(id: string) {
+
+    this.http.get<any>(`http://localhost:8000/api/vehicles/${id}`)
+      .subscribe({
+        next: (vehicle) => {
+
+          this.form.patchValue({
+            plate: vehicle.plate,
+            vehicle_type: vehicle.vehicle_type
+          });
+
+        },
+        error: (err) => {
+          console.error(err);
+        }
+      });
   }
 
   onSubmit() {
 
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
-
-    if (!this.user || !this.user.id) {
-      this.errorMessage = 'Usuario no autenticado';
+    if (!this.vehicleId || !this.user?.id) {
+      this.errorMessage = 'Datos incompletos';
       return;
     }
 
     this.loading = true;
-    this.successMessage = '';
     this.errorMessage = '';
+    this.successMessage = '';
 
     const payload = {
-      user_id: this.user.id,
-      plate: this.form.value.plate,
-      vehicle_type: this.form.value.vehicleType,
-      notes: this.form.value.notes,
-      entry_time: new Date()
+      vehicle_id: this.vehicleId,
+      notes: this.form.value.notes
     };
 
     console.log('CHECK-IN PAYLOAD:', payload);
 
-    this.http.post('http://localhost:8000/api/parking-entry', payload)
-      .subscribe({
-        next: (res: any) => {
-
-          this.successMessage = 'Ingreso registrado correctamente 🚗';
-          this.loading = false;
-
-          this.form.reset();
-        },
-
-        error: (err) => {
-
-          console.error(err);
-
-          this.errorMessage =
-            err.error?.detail || 'Error registrando ingreso';
-
-          this.loading = false;
-        }
-      });
+    this.http.post(
+      'http://localhost:8000/api/parking-entries/check-in',
+      payload
+    ).subscribe({
+      next: () => {
+        this.successMessage = 'Check-in registrado 🚗';
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error(err);
+        this.errorMessage = err.error?.detail || 'Error registrando check-in';
+        this.loading = false;
+      }
+    });
   }
 }
