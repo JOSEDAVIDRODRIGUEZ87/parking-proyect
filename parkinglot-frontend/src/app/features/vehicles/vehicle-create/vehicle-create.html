@@ -1,1 +1,81 @@
-<p>vehicle-create works!</p>
+<div class="container">
+
+  <div class="card">
+
+    <h2>🚗 Registro de Vehículo</h2>
+
+    <!-- 👤 USUARIO -->
+    <div class="user-box">
+
+      <h3>Usuario autenticado</h3>
+
+      <p><strong>Nombre:</strong>
+        {{ user?.first_name }} {{ user?.last_name }}
+      </p>
+
+      <p><strong>Email:</strong> {{ user?.email }}</p>
+
+      <p><strong>Rol:</strong> {{ user?.role }}</p>
+
+    </div>
+
+    <hr />
+
+    <!-- 🚗 FORMULARIO VEHÍCULO -->
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+
+      <div class="grid">
+
+        <div class="input-group">
+          <label>Placa</label>
+          <input formControlName="plate" placeholder="ABC123" />
+        </div>
+
+        <div class="input-group">
+          <label>Tipo de vehículo</label>
+          <select formControlName="vehicle_type">
+            <option value="">Seleccione</option>
+            <option value="CAR">Carro</option>
+            <option value="MOTORCYCLE">Moto</option>
+            <option value="BICYCLE">Bicicleta</option>
+          </select>
+        </div>
+
+        <div class="input-group">
+          <label>Marca</label>
+          <input formControlName="brand" placeholder="Toyota, Yamaha..." />
+        </div>
+
+        <div class="input-group">
+          <label>Color</label>
+          <input formControlName="color" placeholder="Rojo, Negro..." />
+        </div>
+        <div class="input-group">
+          <label>Modelo</label>
+          <input formControlName="model" placeholder="Corolla, FZ, Civic..." />
+        </div>
+
+      </div>
+
+      <!-- BOTÓN -->
+      <button type="submit" [disabled]="form.invalid || loading">
+
+        <span *ngIf="!loading">Registrar vehículo</span>
+        <span *ngIf="loading">Guardando...</span>
+
+      </button>
+
+      <!-- MENSAJES -->
+      <p class="success" *ngIf="successMessage">
+        {{ successMessage }}
+      </p>
+
+      <p class="error" *ngIf="errorMessage">
+        {{ errorMessage }}
+      </p>
+
+    </form>
+
+  </div>
+
+</div>

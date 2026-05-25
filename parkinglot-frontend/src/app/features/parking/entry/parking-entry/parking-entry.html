@@ -1,1 +1,107 @@
-<p>parking-entry works!</p>
+<div class="container">
+
+  <div class="card">
+
+    <h2>🚗 Check-in Parqueadero</h2>
+
+    <!-- USUARIO -->
+    <div class="section">
+      <h3>👤 Usuario</h3>
+
+      <div class="user-box">
+
+        <div>
+          <span>Nombre</span>
+          <p>
+            @if (user) {
+            {{ user.first_name }} {{ user.last_name }}
+            } @else {
+            Cargando usuario...
+            }
+          </p>
+        </div>
+
+        <div>
+          <span>Email</span>
+          <p>
+            @if (user) {
+            {{ user.email }}
+            } @else {
+            ---
+            }
+          </p>
+        </div>
+
+        <div>
+          <span>Rol</span>
+          <p>
+            @if (user) {
+            {{ user.role }}
+            } @else {
+            ---
+            }
+          </p>
+        </div>
+
+      </div>
+    </div>
+
+    <hr />
+
+    <!-- FORM -->
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+
+      <div class="grid">
+
+        <div class="input-group">
+          <label>Placa</label>
+          <input formControlName="plate" placeholder="ABC123" />
+        </div>
+
+        <div class="input-group">
+          <label>Tipo de vehículo</label>
+          <select formControlName="vehicleType">
+            <option value="">Seleccione</option>
+            <option value="carro">Carro</option>
+            <option value="moto">Moto</option>
+            <option value="bicicleta">Bicicleta</option>
+          </select>
+        </div>
+
+      </div>
+
+      <div class="input-group">
+        <label>Observaciones</label>
+        <textarea formControlName="notes" placeholder="Opcional..."></textarea>
+      </div>
+
+      <!-- HORA -->
+      <div class="time">
+        🕒 Hora de ingreso: {{ now | date:'medium' }}
+      </div>
+
+      <!-- BOTÓN -->
+      <button type="submit" [disabled]="form.invalid || loading">
+
+        @if (!loading) {
+        Registrar ingreso
+        } @else {
+        Registrando...
+        }
+
+      </button>
+
+      <!-- MENSAJES -->
+      @if (successMessage) {
+      <p class="success">{{ successMessage }}</p>
+      }
+
+      @if (errorMessage) {
+      <p class="error">{{ errorMessage }}</p>
+      }
+
+    </form>
+
+  </div>
+
+</div>

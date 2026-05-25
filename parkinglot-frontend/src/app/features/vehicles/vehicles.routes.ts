@@ -8,7 +8,7 @@ export const vehiclesRoutes: Routes = [
                 .then(m => m.VehicleList)
     },
     {
-        path: 'create',
+        path: 'create-vehicle',
         loadComponent: () =>
             import('./vehicle-create/vehicle-create')
                 .then(m => m.VehicleCreate)
