@@ -1,19 +1,20 @@
-from sqlalchemy import Column
-from sqlalchemy import String
-from sqlalchemy import Boolean
-from sqlalchemy import TIMESTAMP
-
-from sqlalchemy.orm import relationship
-
-from sqlalchemy.sql import func
+import uuid
+from enum import Enum as PyEnum # Importamos el Enum de Python
 
 from app.config.database import Base
+from sqlalchemy import TIMESTAMP, Boolean, Column, Enum, String  # Añadimos Enum de SQLAlchemy
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 
-import uuid
+
+# 1. Definimos los roles permitidos
+class UserRole(str, PyEnum):
+    ADMIN = "admin"
+    USER = "user"
+    MECHANIC = "mechanic"  # (Ejemplo por si tu app es de vehículos)
 
 
 class User(Base):
-
     __tablename__ = "users"
 
     id = Column(
@@ -41,6 +42,13 @@ class User(Base):
     phone = Column(
         String(20),
         nullable=True
+    )
+
+    # 2. Agregamos el campo rol con un valor por defecto
+    role = Column(
+        Enum(UserRole),
+        default=UserRole.USER,
+        nullable=False
     )
 
     is_active = Column(
