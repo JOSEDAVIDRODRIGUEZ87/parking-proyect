@@ -1,1 +1,39 @@
-<p>parking-exit works!</p>
+<div class="container">
+
+  <div class="card">
+
+    <h2>🚪 Check-out Parqueadero</h2>
+
+    <!-- ERROR -->
+    <p class="error" *ngIf="errorMessage">
+      {{ errorMessage }}
+    </p>
+
+    <!-- INFO VEHÍCULO -->
+    <div *ngIf="entry">
+
+      <p><strong>Placa:</strong> {{ entry.vehicle?.plate }}</p>
+      <p><strong>Ingreso:</strong> {{ entry.entry_time | date:'medium' }}</p>
+
+      <p *ngIf="entry.notes">
+        <strong>Notas:</strong> {{ entry.notes }}
+      </p>
+
+    </div>
+
+    <!-- BOTÓN -->
+    <button (click)="checkOut()" [disabled]="loading || !parkingEntryId">
+
+      <span *ngIf="!loading">Registrar salida</span>
+      <span *ngIf="loading">Procesando...</span>
+
+    </button>
+
+    <!-- SUCCESS -->
+    <p class="success" *ngIf="successMessage">
+      {{ successMessage }}
+    </p>
+
+  </div>
+
+</div>
