@@ -8,7 +8,7 @@ export const parkingRoutes: Routes = [
     },
 
     {
-        path: 'entry',
+        path: 'parking-entry',
         loadComponent: () =>
             import('../parking/entry/parking-entry/parking-entry')
                 .then(m => m.ParkingEntry)

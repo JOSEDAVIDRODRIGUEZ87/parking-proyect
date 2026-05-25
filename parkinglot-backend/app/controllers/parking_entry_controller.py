@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from datetime import datetime
 import uuid
@@ -69,10 +69,10 @@ def check_in(request: ParkingEntryRequest, db: Session = Depends(get_db)):
     if not vehicle:
         raise HTTPException(status_code=404, detail="Vehiculo no encontrado")
 
-    # validar ingreso activo
+    # 🔧 CORREGIDO: Uso de .is_(None) para compatibilidad estricta con SQL Null
     active_entry = db.query(ParkingEntry).filter(
         ParkingEntry.vehicle_id == request.vehicle_id,
-        ParkingEntry.exit_time == None
+        ParkingEntry.exit_time.is_(None) 
     ).first()
 
     if active_entry:
@@ -84,7 +84,7 @@ def check_in(request: ParkingEntryRequest, db: Session = Depends(get_db)):
     new_entry = ParkingEntry(
         id=str(uuid.uuid4()),
         vehicle_id=request.vehicle_id,
-        notes=request.notes  # 🆕 NOTA
+        notes=request.notes
     )
 
     db.add(new_entry)
@@ -103,7 +103,10 @@ def check_in(request: ParkingEntryRequest, db: Session = Depends(get_db)):
 @router.put("/check-out/{parking_entry_id}")
 async def check_out(parking_entry_id: str, db: Session = Depends(get_db)):
 
-    entry = db.query(ParkingEntry).filter(
+    # 🔧 OPTIMIZACIÓN: Eager loading (joinedload) para traer vehículo y usuario de golpe
+    entry = db.query(ParkingEntry).options(
+        joinedload(ParkingEntry.vehicle).joinedload(Vehicle.user)
+    ).filter(
         ParkingEntry.id == parking_entry_id
     ).first()
 
@@ -118,9 +121,8 @@ async def check_out(parking_entry_id: str, db: Session = Depends(get_db)):
     # =========================
     exit_time = datetime.now()
 
-    total_minutes = int(
-        (exit_time - entry.entry_time).total_seconds() / 60
-    )
+    # Evita minutos negativos si por alguna razón el reloj del servidor difiere por milisegundos
+    total_minutes = max(0, int((exit_time - entry.entry_time).total_seconds() / 60))
 
     rate_per_minute = 50
     total_amount = total_minutes * rate_per_minute
@@ -137,7 +139,6 @@ async def check_out(parking_entry_id: str, db: Session = Depends(get_db)):
     # EMAIL DESTINATARIO
     # =========================
     email_to = None
-
     if entry.vehicle and entry.vehicle.user:
         email_to = entry.vehicle.user.email
 
@@ -145,13 +146,15 @@ async def check_out(parking_entry_id: str, db: Session = Depends(get_db)):
     # EMAIL TEMPLATE
     # =========================
     if email_to:
+        # Formateo básico de la fecha para que no salga con microsegundos feos en el HTML
+        formatted_exit_time = exit_time.strftime("%Y-%m-%d %H:%M:%S")
 
         html = f"""
         <h2>🚗 Ticket de Parqueadero</h2>
         <p><b>Placa:</b> {entry.vehicle.plate}</p>
         <p><b>Tiempo total:</b> {total_minutes} minutos</p>
         <p><b>Total a pagar:</b> ${total_amount}</p>
-        <p><b>Hora salida:</b> {exit_time}</p>
+        <p><b>Hora salida:</b> {formatted_exit_time}</p>
         """
 
         message = MessageSchema(

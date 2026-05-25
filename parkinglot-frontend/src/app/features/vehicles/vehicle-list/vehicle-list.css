@@ -2,83 +2,126 @@
   padding: 20px;
   max-width: 1000px;
   margin: auto;
-  font-family: Arial, sans-serif;
+  font-family: 'Segoe UI', Roboto, Arial, sans-serif; /* Tipografía un poco más moderna */
 }
 
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 20px;
 }
 
+.header h2 {
+  margin: 0;
+  color: #333;
+}
+
+/* Botón general (Recargar) */
 button {
-  padding: 8px 12px;
+  padding: 8px 16px;
   border: none;
   background: #1976d2;
   color: white;
   border-radius: 6px;
+  font-weight: 500;
   cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+button:hover:not(:disabled) {
+  background: #1565c0;
 }
 
 button:disabled {
-  background: #aaa;
+  background: #ccc;
+  cursor: not-allowed;
 }
 
+/* Info del Usuario */
 .user-info {
-  background: #f5f5f5;
-  padding: 10px;
-  margin: 10px 0;
+  background: #f8f9fa;
+  padding: 12px 16px;
+  margin-bottom: 20px;
   border-radius: 8px;
+  border-left: 4px solid #1976d2; /* Un detalle visual sutil */
 }
 
+.user-info p {
+  margin: 0;
+  color: #555;
+}
+
+/* Grilla Responsiva */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); /* Subí a 240px para mejor lectura */
+  gap: 16px;
   margin-top: 15px;
 }
 
+/* Tarjetas de Vehículos */
 .card {
-  padding: 12px;
+  padding: 16px;
   border-radius: 10px;
-  border: 1px solid #ddd;
-  cursor: pointer;
-  transition: 0.2s;
+  border: 1px solid #e0e0e0;
   background: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Sombra suave inicial */
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 .card:hover {
-  transform: scale(1.02);
+  transform: translateY(-4px); /* Efecto de elevación en lugar de escala */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.selected {
-  border: 2px solid #1976d2;
-  background: #e3f2fd;
+.card h3 {
+  margin: 0 0 12px 0;
+  color: #1976d2;
+  font-size: 1.3rem;
+  border-bottom: 1px dashed #e0e0e0;
+  padding-bottom: 6px;
 }
 
-.error {
-  color: red;
+.card p {
+  margin: 6px 0;
+  font-size: 0.95rem;
+  color: #666;
 }
 
-.selected-box {
-  margin-top: 20px;
-  padding: 10px;
-  border-left: 4px solid #1976d2;
-  background: #f1f8ff;
-}
-
+/* Botón Check-in interno */
 .btn-checkin {
-  margin-top: 10px;
+  margin-top: auto; /* Empuja el botón siempre al fondo si las cards tienen alturas distintas */
   width: 100%;
-  padding: 8px;
+  padding: 10px;
   border: none;
   border-radius: 6px;
-  background: #1976d2;
+  background: #2e7d32; /* Cambiado a verde para denotar 'Ingreso/Check-In' y diferenciarlo */
   color: white;
+  font-weight: bold;
   cursor: pointer;
-  transition: 0.2s;
+  transition: background 0.2s;
 }
 
 .btn-checkin:hover {
-  background: #125aa3;
+  background: #1b5e20;
+}
+
+/* Estados (Cargando / Error / Vacío) */
+.error {
+  color: #c62828;
+  background: #ffebee;
+  padding: 10px 15px;
+  border-radius: 6px;
+  border: 1px solid #ffcdd2;
+}
+
+.loading-text, .empty-text {
+  color: #757575;
+  font-style: italic;
+  text-align: center;
+  grid-column: 1 / -1; /* Hace que el texto ocupe todo el ancho de la grilla */
+  padding: 20px;
 }

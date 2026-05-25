@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../../../core/services/auth.service';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
   selector: 'app-parking-entry',
@@ -27,7 +27,8 @@ export class ParkingEntry {
     private fb: FormBuilder,
     private authService: AuthService,
     private http: HttpClient,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private router: Router   // ✅ FIX CRÍTICO
   ) {
 
     this.user = this.authService.getUser();
@@ -87,17 +88,30 @@ export class ParkingEntry {
 
     console.log('CHECK-IN PAYLOAD:', payload);
 
-    this.http.post(
+    this.http.post<any>(
       'http://localhost:8000/api/parking-entries/check-in',
       payload
     ).subscribe({
-      next: () => {
+      next: (res) => {
+
         this.successMessage = 'Check-in registrado 🚗';
         this.loading = false;
+
+        // ✅ FIX: backend devuelve data.id, no parking_entry_id
+        const entryId = res.data?.id;
+
+        this.router.navigate(['/parking-exit'], {
+          queryParams: { id: entryId }
+        });
+
       },
       error: (err) => {
+
         console.error(err);
-        this.errorMessage = err.error?.detail || 'Error registrando check-in';
+
+        this.errorMessage =
+          err.error?.detail || 'Error registrando check-in';
+
         this.loading = false;
       }
     });
