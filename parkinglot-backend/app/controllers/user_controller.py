@@ -75,14 +75,16 @@ def create_user(
     if existing_user:
 
         raise HTTPException(
-            status_code=400,
+            status_code=409,
             detail="El correo ya existe"
         )
 
     new_user = User(
         id=str(uuid.uuid4()),
-        name=request.name,
-        email=request.email
+        first_name=request.first_name,
+        last_name=request.last_name,
+        email=request.email,
+        phone=request.phone
     )
 
     db.add(new_user)
@@ -116,8 +118,10 @@ def update_user(
             detail="Usuario no encontrado"
         )
 
-    user.name = request.name
+    user.first_name = request.first_name
+    user.last_name = request.last_name
     user.email = request.email
+    user.phone = request.phone
 
     db.commit()
 
