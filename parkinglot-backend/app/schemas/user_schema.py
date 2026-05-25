@@ -10,12 +10,10 @@ from app.models.user_model import UserRole
 class UserRequest(BaseModel):
     first_name: str
     last_name: str
-    email: EmailStr
+    email: str
     phone: Optional[str] = None
-    # 2. Agregamos el rol con un valor por defecto. 
-    # Si el cliente no lo envía, automáticamente se creará como 'user'.
-    role: UserRole = UserRole.USER
-
+    role: Optional[str] = None
+    password: str
 
 # RESPONSE (Lo que tu API devuelve)
 class UserResponse(BaseModel):
