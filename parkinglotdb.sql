@@ -1,0 +1,1 @@
+SELECT * FROM parkinglotapi_db.parking_entries;
