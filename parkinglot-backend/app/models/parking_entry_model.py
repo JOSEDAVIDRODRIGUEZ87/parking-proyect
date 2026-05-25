@@ -3,6 +3,7 @@ from sqlalchemy import String
 from sqlalchemy import Integer
 from sqlalchemy import TIMESTAMP
 from sqlalchemy import ForeignKey
+from sqlalchemy import Numeric
 
 from sqlalchemy.orm import relationship
 
@@ -41,6 +42,16 @@ class ParkingEntry(Base):
 
     total_minutes = Column(
         Integer,
+        nullable=True
+    )
+
+    rate_per_minute = Column(
+        Numeric(10, 2),
+        default=50.00
+    )
+
+    total_amount = Column(
+        Numeric(10, 2),
         nullable=True
     )
 
