@@ -1,14 +1,13 @@
-from fastapi import APIRouter
-from fastapi import Depends
-from fastapi import HTTPException
-
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from datetime import datetime
-
 import uuid
 
+from fastapi_mail import MessageSchema
+
 from app.config.database import SessionLocal
+from app.config.mail_config import fast_mail
 
 from app.models.vehicle_model import Vehicle
 from app.models.parking_entry_model import ParkingEntry
@@ -22,51 +21,44 @@ router = APIRouter(
 )
 
 
-# CONEXION DB
+# =========================
+# DB CONNECTION
+# =========================
 def get_db():
-
     db = SessionLocal()
-
     try:
         yield db
-
     finally:
         db.close()
 
 
-# LISTAR TODOS LOS INGRESOS
+# =========================
+# LISTAR TODOS
+# =========================
 @router.get("/")
-def get_parking_entries(
-    db: Session = Depends(get_db)
-):
-
-    parking_entries = db.query(ParkingEntry).all()
-
-    return parking_entries
+def get_parking_entries(db: Session = Depends(get_db)):
+    return db.query(ParkingEntry).all()
 
 
-# OBTENER INGRESO POR ID
+# =========================
+# OBTENER POR ID
+# =========================
 @router.get("/{parking_entry_id}")
-def get_parking_entry_by_id(
-    parking_entry_id: str,
-    db: Session = Depends(get_db)
-):
+def get_parking_entry_by_id(parking_entry_id: str, db: Session = Depends(get_db)):
 
-    parking_entry = db.query(ParkingEntry).filter(
+    entry = db.query(ParkingEntry).filter(
         ParkingEntry.id == parking_entry_id
     ).first()
 
-    if not parking_entry:
+    if not entry:
+        raise HTTPException(status_code=404, detail="Registro no encontrado")
 
-        raise HTTPException(
-            status_code=404,
-            detail="Registro no encontrado"
-        )
-
-    return parking_entry
+    return entry
 
 
-# REGISTRAR INGRESO VEHICULO
+# =========================
+# CHECK-IN
+# =========================
 @router.post("/check-in")
 def check_in(request: ParkingEntryRequest, db: Session = Depends(get_db)):
 
@@ -77,6 +69,7 @@ def check_in(request: ParkingEntryRequest, db: Session = Depends(get_db)):
     if not vehicle:
         raise HTTPException(status_code=404, detail="Vehiculo no encontrado")
 
+    # validar ingreso activo
     active_entry = db.query(ParkingEntry).filter(
         ParkingEntry.vehicle_id == request.vehicle_id,
         ParkingEntry.exit_time == None
@@ -91,7 +84,7 @@ def check_in(request: ParkingEntryRequest, db: Session = Depends(get_db)):
     new_entry = ParkingEntry(
         id=str(uuid.uuid4()),
         vehicle_id=request.vehicle_id,
-        notes=request.notes  # ✅ AQUÍ YA FUNCIONA
+        notes=request.notes  # 🆕 NOTA
     )
 
     db.add(new_entry)
@@ -103,56 +96,78 @@ def check_in(request: ParkingEntryRequest, db: Session = Depends(get_db)):
         "data": new_entry
     }
 
-# REGISTRAR SALIDA VEHICULO
-@router.put("/check-out/{parking_entry_id}")
-def check_out(
-    parking_entry_id: str,
-    db: Session = Depends(get_db)
-):
 
-    parking_entry = db.query(ParkingEntry).filter(
+# =========================
+# CHECK-OUT + EMAIL
+# =========================
+@router.put("/check-out/{parking_entry_id}")
+async def check_out(parking_entry_id: str, db: Session = Depends(get_db)):
+
+    entry = db.query(ParkingEntry).filter(
         ParkingEntry.id == parking_entry_id
     ).first()
 
-    if not parking_entry:
+    if not entry:
+        raise HTTPException(status_code=404, detail="Registro no encontrado")
 
-        raise HTTPException(
-            status_code=404,
-            detail="Registro no encontrado"
-        )
+    if entry.exit_time is not None:
+        raise HTTPException(status_code=409, detail="La salida ya fue registrada")
 
-    if parking_entry.exit_time is not None:
-
-        raise HTTPException(
-            status_code=409,
-            detail="La salida ya fue registrada"
-        )
-
+    # =========================
+    # CÁLCULOS
+    # =========================
     exit_time = datetime.now()
 
     total_minutes = int(
-        (exit_time - parking_entry.entry_time).total_seconds() / 60
+        (exit_time - entry.entry_time).total_seconds() / 60
     )
 
-    # TARIFA FIJA
     rate_per_minute = 50
-
-    # TOTAL A PAGAR
     total_amount = total_minutes * rate_per_minute
 
-    parking_entry.exit_time = exit_time
-    parking_entry.total_minutes = total_minutes
-    parking_entry.rate_per_minute = rate_per_minute
-    parking_entry.total_amount = total_amount
+    entry.exit_time = exit_time
+    entry.total_minutes = total_minutes
+    entry.rate_per_minute = rate_per_minute
+    entry.total_amount = total_amount
 
     db.commit()
+    db.refresh(entry)
 
-    db.refresh(parking_entry)
+    # =========================
+    # EMAIL DESTINATARIO
+    # =========================
+    email_to = None
+
+    if entry.vehicle and entry.vehicle.user:
+        email_to = entry.vehicle.user.email
+
+    # =========================
+    # EMAIL TEMPLATE
+    # =========================
+    if email_to:
+
+        html = f"""
+        <h2>🚗 Ticket de Parqueadero</h2>
+        <p><b>Placa:</b> {entry.vehicle.plate}</p>
+        <p><b>Tiempo total:</b> {total_minutes} minutos</p>
+        <p><b>Total a pagar:</b> ${total_amount}</p>
+        <p><b>Hora salida:</b> {exit_time}</p>
+        """
+
+        message = MessageSchema(
+            subject="Factura Parqueadero - Salida Vehículo",
+            recipients=[email_to],
+            body=html,
+            subtype="html"
+        )
+
+        await fast_mail.send_message(message)
 
     return {
         "message": "Salida registrada correctamente",
         "time_total_minutes": total_minutes,
         "rate_per_minute": rate_per_minute,
         "total_amount": total_amount,
-        "data": parking_entry
+        "email_sent": bool(email_to),
+        "data": entry
     }
