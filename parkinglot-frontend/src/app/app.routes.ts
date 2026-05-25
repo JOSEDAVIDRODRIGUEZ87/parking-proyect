@@ -23,9 +23,15 @@ export const routes: Routes = [
     },
 
     {
-        path: 'parking',
+        path: 'parking-entry',
         loadChildren: () =>
             import('./features/parking/parking.routes')
                 .then(m => m.parkingRoutes)
+    },
+
+    // 🔥 fallback opcional (recomendado)
+    {
+        path: '**',
+        redirectTo: ''
     }
 ];
